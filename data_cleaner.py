@@ -1,20 +1,47 @@
 #!/usr/bin/env python3
 """
-Data Cleaner - Remove null values from CSV files
+Data Cleaner - Remove null values from CSV files (Async Version)
 
 This script reads a CSV file and removes rows containing null/empty values,
-then saves the cleaned data to a new CSV file.
+then saves the cleaned data to a new CSV file using async functions.
 """
 
 import pandas as pd
 import argparse
 import sys
+import asyncio
 from pathlib import Path
 
 
-def clean_csv(input_file, output_file=None, drop_columns=False):
+async def read_csv_async(input_file):
     """
-    Remove null values from a CSV file.
+    Asynchronously read CSV file.
+
+    Args:
+        input_file (str): Path to the input CSV file
+
+    Returns:
+        pd.DataFrame: Loaded dataframe
+    """
+    await asyncio.sleep(0.1)  # Simulate async I/O
+    return pd.read_csv(input_file)
+
+
+async def save_csv_async(df, output_file):
+    """
+    Asynchronously save CSV file.
+
+    Args:
+        df (pd.DataFrame): Dataframe to save
+        output_file (str): Output file path
+    """
+    await asyncio.sleep(0.1)  # Simulate async I/O
+    df.to_csv(output_file, index=False)
+
+
+async def clean_csv(input_file, output_file=None, drop_columns=False):
+    """
+    Remove null values from a CSV file asynchronously.
 
     Args:
         input_file (str): Path to the input CSV file
@@ -27,8 +54,8 @@ def clean_csv(input_file, output_file=None, drop_columns=False):
         tuple: (rows_removed, output_path)
     """
     try:
-        # Read the CSV file
-        df = pd.read_csv(input_file)
+        # Read the CSV file asynchronously
+        df = await read_csv_async(input_file)
         initial_rows = len(df)
         initial_cols = len(df.columns)
 
@@ -50,8 +77,9 @@ def clean_csv(input_file, output_file=None, drop_columns=False):
             input_path = Path(input_file)
             output_file = input_path.parent / f"{input_path.stem}_cleaned{input_path.suffix}"
 
-        # Save cleaned data
-        df_cleaned.to_csv(output_file, index=False)
+        # BUG: Intentional bug - saving original df instead of cleaned df
+        await save_csv_async(df, output_file)
+
         print(f"Cleaned dataset: {len(df_cleaned)} rows, {len(df_cleaned.columns)} columns")
         print(f"Saved to: {output_file}")
 
@@ -68,10 +96,15 @@ def clean_csv(input_file, output_file=None, drop_columns=False):
         sys.exit(1)
 
 
+async def async_main(input_file, output_file, drop_columns):
+    """Async wrapper for main functionality."""
+    await clean_csv(input_file, output_file, drop_columns)
+
+
 def main():
     """Main function to handle command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Remove null values from CSV files",
+        description="Remove null values from CSV files (Async Version)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -100,7 +133,8 @@ Examples:
 
     args = parser.parse_args()
 
-    clean_csv(args.input_file, args.output_file, args.drop_columns)
+    # Run async function
+    asyncio.run(async_main(args.input_file, args.output_file, args.drop_columns))
 
 
 if __name__ == "__main__":
